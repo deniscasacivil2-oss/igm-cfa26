@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard IGM-CFA 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#003366',
+                        gold: '#ffb800',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f1f5f9; color: #1e293b; }
+        
+        /* Modificações do Menu Lateral Retrátil */
+        .sidebar { background-color: #003366; transition: all 0.3s ease-in-out; overflow-x: hidden; white-space: nowrap; }
+        .sidebar.collapsed { width: 4.5rem; }
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .sidebar-footer { display: none; }
+        .sidebar.collapsed .logo-container { padding: 0.5rem; margin-bottom: 0; }
+        .sidebar.collapsed .logo-container img { width: 32px; height: 32px; object-fit: contain; }
+        .sidebar.collapsed .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar.collapsed .nav-link i { margin-right: 0; width: 100%; text-align: center; }
+        
+        /* Comportamento do menu no Mobile */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; z-index: 100; transform: translateX(-100%); width: 16rem !important; display: flex !important; left: 0; }
+            .sidebar.mobile-open { transform: translateX(0); }
+        }
+
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.15); border: 1px solid #e2e8f0; }
+        .nav-link { transition: all 0.2s; border-radius: 8px; }
+        .nav-link.active { background-color: #ffb800; color: #003366 !important; font-weight: 600; }
+        .section-content { display: none; }
+        .section-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .logo-container img { object-fit: contain; }
+        
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .traffic-light { width: 14px; height: 14px; border-radius: 50%; display: inline-block; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        .tl-red { background-color: #ef4444; }
+        .tl-yellow { background-color: #eab308; }
+        .tl-green { background-color: #22c55e; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <aside id="sidebar" class="sidebar w-64 text-white flex-shrink-0 flex flex-col hidden md:flex h-screen sticky top-0">
+        <div class="p-6 text-center border-b border-blue-900 flex flex-col items-center">
+            <div class="bg-white p-2 rounded-lg mb-4 inline-block logo-container shadow-lg transition-all">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Bras%C3%A3o_de_Ol%C3%ADmpia%2C_SP.jpg" alt="Brasão de Olímpia" class="h-16 transition-all" onerror="this.src='https://placehold.co/100x100/ffffff/003366?text=Olimpia'">
+            </div>
+            <h2 class="sidebar-title text-[10px] font-bold tracking-widest uppercase text-blue-100 leading-tight px-2">Análise Estratégica IGM-CFA 2026</h2>
+        </div>
+        
+        <nav class="flex-grow p-4 space-y-1">
+            <a href="#" onclick="showSection('sala-situacao', this)" class="nav-link active flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-chess-king w-6 text-center"></i>
+                <span class="nav-text text-sm">Sala de Situação</span>
+            </a>
+            <a href="#" onclick="showSection('visao-geral', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-chart-pie w-6 text-center"></i>
+                <span class="nav-text text-sm">Visão Geral</span>
+            </a>
+            <a href="#" onclick="showSection('financas', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-coins w-6 text-center"></i>
+                <span class="nav-text text-sm">Finanças</span>
+            </a>
+            <a href="#" onclick="showSection('gestao', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-sitemap w-6 text-center"></i>
+                <span class="nav-text text-sm">Gestão</span>
+            </a>
+            <a href="#" onclick="showSection('desempenho', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-ranking-star w-6 text-center"></i>
+                <span class="nav-text text-sm">Desempenho</span>
+            </a>
+            <a href="#" onclick="showSection('benchmarking', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-scale-balanced w-6 text-center"></i>
+                <span class="nav-text text-sm">Benchmarking</span>
+            </a>
+            <a href="#" onclick="showSection('plano-acao', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-list-check w-6 text-center"></i>
+                <span class="nav-text text-sm">Plano de Ação</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-6 bg-blue-950 text-[10px] text-blue-300 mt-auto border-t border-blue-900 whitespace-normal">
+            <p class="font-bold mb-1 leading-tight">Setor de Monitoramento e Avaliação de Indicadores</p>
+            <p class="leading-tight">Divisão de Análise de Dados e Indicadores</p>
+            <p class="leading-tight">Casa Civil | Olímpia</p>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col min-w-0">
+        <header class="bg-white border-b h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <button id="toggleSidebarBtn" class="text-navy hover:bg-gray-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-bars text-xl"></i></button>
+                <h1 id="page-title" class="text-lg md:text-xl font-bold text-navy uppercase tracking-tight">Sala de Situação do Prefeito</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="hidden sm:inline-block bg-blue-100 text-navy px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Base 2026</span>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-8 overflow-y-auto w-full mx-auto">
+
+            <section id="sala-situacao" class="section-content active">
+                <div class="mb-6 p-4 bg-navy text-white rounded-xl shadow-lg flex items-center border-l-8 border-gold">
+                    <div class="mr-4 text-3xl text-gold"><i class="fa-solid fa-chess-king"></i></div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-blue-200">Painel Executivo Estratégico</p>
+                        <p class="text-sm italic font-light">Monitoramento geral das dimensões do IGM-CFA e priorização de ações.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="card p-5 border-l-8 border-navy flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Nota Geral IGM</p>
+                        <h3 class="text-4xl font-black text-navy">6,84</h3>
+                        <p class="text-[10px] text-gray-500 mt-2 font-bold"><i class="fa-solid fa-chart-simple text-blue-500"></i> Meta: 7,50</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-blue-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Ranking Grupo 6</p>
+                        <h3 class="text-4xl font-black text-blue-600">49º</h3>
+                        <p class="text-[10px] text-gray-500 mt-2 font-bold"><i class="fa-solid fa-trophy text-gold"></i> Posicionamento</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-green-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Melhor Dimensão</p>
+                        <h3 class="text-2xl font-bold text-green-600 truncate">Desempenho</h3>
+                        <p class="text-[11px] text-green-700 mt-2 font-bold bg-green-50 px-2 py-1 rounded inline-block w-max">Nota: 9,35</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-red-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Dimensão Crítica</p>
+                        <h3 class="text-2xl font-bold text-red-600 truncate">Finanças</h3>
+                        <p class="text-[11px] text-red-700 mt-2 font-bold bg-red-50 px-2 py-1 rounded inline-block w-max">Nota: 4,79</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Radar Chart -->
+                    <div class="card p-6 lg:col-span-1 flex flex-col items-center">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Visão Multidimensional</h4>
+                        <div class="h-64 w-full relative">
+                            <canvas id="geralRadarChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Priorities -->
+                    <div class="card p-6 lg:col-span-1 bg-gray-50">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-red-500 pb-2 text-red-600">Ranking de Prioridades</h4>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">1. Cap. de Investimento</p>
+                                    <p class="text-[10px] text-gray-500">Atualmente em 3,98%</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">2. Captação de Recursos</p>
+                                    <p class="text-[10px] text-gray-500">Gestão: Nota 25,77</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">3. Planejamento Gov.</p>
+                                    <p class="text-[10px] text-gray-500">Fortalecimento Estratégico</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">4. Vulnerabilidade Social</p>
+                                    <p class="text-[10px] text-gray-500">16,86% da população</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">5. Painel CAUC</p>
+                                    <p class="text-[10px] text-gray-500">Regularidade Fiscal (0,83)</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulator -->
+                    <div class="card p-6 lg:col-span-1 border-t-8 border-navy">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full"><i class="fa-solid fa-calculator mr-2"></i> Simulador de Impacto</h4>
+                        <div class="mb-4">
+                            <p class="text-xs font-bold text-gray-700 mb-1">Capacidade de Investimento Atual: <span class="text-red-500" id="sim-current">3.98%</span></p>
+                            <input type="range" min="3" max="40" value="3.98" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" id="investment-slider" oninput="updateSimulator(this.value)">
+                            <div class="flex justify-between text-[9px] text-gray-500 mt-1">
+                                <span>3%</span>
+                                <span>20%</span>
+                                <span>40%</span>
+                            </div>
+                        </div>
+                        <div class="bg-navy rounded-lg p-4 text-center mt-6 text-white shadow-inner relative overflow-hidden">
+                            <div class="absolute -right-4 -top-4 opacity-10 text-6xl"><i class="fa-solid fa-chart-line"></i></div>
+                            <p class="text-[10px] uppercase tracking-widest text-blue-200 mb-1">Nota IGM Projetada</p>
+                            <h2 class="text-5xl font-black text-gold" id="sim-projected">6,84</h2>
+                            <p class="text-xs mt-2 text-green-400 font-bold hidden" id="sim-diff">+0,00 Pontos</p>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-4 italic text-center">Aumentar a capacidade de investimento eleva diretamente a dimensão Finanças, impulsionando a nota global.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="visao-geral" class="section-content">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="card p-6 col-span-1 md:col-span-2 flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute left-0 top-0 h-full w-2 bg-navy"></div>
+                        <h4 class="font-black text-navy text-sm mb-2 uppercase tracking-widest border-b-2 border-gold pb-2 w-full text-center">Desempenho Geral IGM-CFA</h4>
+                        <div class="w-full flex justify-center h-48 mt-4 relative">
+                            <canvas id="gaugeChart"></canvas>
+                            <div class="absolute bottom-2 text-center w-full">
+                                <span class="text-3xl font-black text-navy">6,84</span>
+                                <span class="text-xs text-gray-500 block">de 10,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6 flex flex-col gap-4 bg-navy text-white">
+                        <h4 class="font-black text-gold text-sm uppercase tracking-widest border-b border-blue-800 pb-2">Dados Demográficos</h4>
+                        <div>
+                            <p class="text-[10px] text-blue-300 uppercase tracking-widest">População</p>
+                            <p class="text-2xl font-bold">57.000 <span class="text-xs font-normal">habitantes</span></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-blue-300 uppercase tracking-widest">PIB per capita</p>
+                            <p class="text-2xl font-bold">R$ 62,76 <span class="text-xs font-normal">mil</span></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-blue-300 uppercase tracking-widest">Área Territorial</p>
+                            <p class="text-2xl font-bold">802,56 <span class="text-xs font-normal">km²</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-6 border-l-8 border-gold bg-yellow-50">
+                    <h4 class="font-black text-navy text-sm uppercase tracking-widest flex items-center mb-2">
+                        <i class="fa-solid fa-lightbulb text-gold mr-2 text-lg"></i> Insight Estratégico
+                    </h4>
+                    <p class="text-sm text-gray-700 leading-relaxed font-medium">
+                        "O município apresenta <strong>excelente desempenho na entrega de serviços públicos (9,35)</strong>, destacando-se regionalmente. Porém, a dimensão <strong>Finanças (4,79)</strong> reduz significativamente sua posição geral no ranking, exigindo foco imediato em liquidez e capacidade de investimentos."
+                    </p>
+                </div>
+            </section>
+
+            <section id="financas" class="section-content">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-navy uppercase">Dimensão Finanças</h2>
+                        <p class="text-sm text-gray-500">Nota da Dimensão: <span class="font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded">4,79</span></p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-lg shadow border border-gray-200 flex gap-4 text-xs font-bold text-gray-600">
+                        <span class="flex items-center gap-1"><span class="traffic-light tl-green"></span> Adequado</span>
+                        <span class="flex items-center gap-1"><span class="traffic-light tl-yellow"></span> Atenção</span>
+                        <span class="flex items-center gap-1"><span class="traffic-light tl-red"></span> Crítico</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="card p-4 border-t-4 border-green-500 relative">
+                        <div class="absolute top-4 right-4"><span class="traffic-light tl-green"></span></div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Liquidez</p>
+                        <p class="text-2xl font-black text-navy mt-1">73,83%</p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-green-500 relative">
+                        <div class="absolute top-4 right-4"><span class="traffic-light tl-green"></span></div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Gasto com Pessoal</p>
+                        <p class="text-2xl font-black text-navy mt-1">39,54%</p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-yellow-500 relative">
+                        <div class="absolute top-4 right-4"><span class="traffic-light tl-yellow"></span></div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Situação Previdenciária</p>
+                        <p class="text-2xl font-black text-navy mt-1">6,50 <span class="text-xs font-normal">/10</span></p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-red-500 relative bg-red-50">
+                        <div class="absolute top-4 right-4"><span class="traffic-light tl-red"></span></div>
+                        <p class="text-[10px] text-red-800 uppercase tracking-widest font-bold">Cap. de Investimento</p>
+                        <p class="text-2xl font-black text-red-600 mt-1">3,98%</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="card p-6 lg:col-span-2">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Composição dos Indicadores Financeiros</h4>
+                        <div class="h-64 w-full">
+                            <canvas id="financasBarChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6 border-l-8 border-red-600 flex flex-col justify-center">
+                        <div class="text-4xl text-red-500 mb-4"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <h4 class="font-black text-navy text-sm uppercase tracking-widest mb-2">Diagnóstico Financeiro</h4>
+                        <p class="text-xs text-gray-700 mb-4 leading-relaxed">
+                            O principal gargalo identificado é a <strong>baixa capacidade de investimento (3,98%)</strong>. Isso indica um comprometimento excessivo das receitas correntes com despesas de custeio.
+                        </p>
+                        <div class="bg-gray-100 p-3 rounded-md">
+                            <p class="text-[10px] font-bold text-gray-600 uppercase mb-1">Outros Indicadores</p>
+                            <ul class="text-xs space-y-1">
+                                <li class="flex justify-between"><span>Autonomia Financeira:</span> <span class="font-bold">59,19%</span></li>
+                                <li class="flex justify-between"><span>Custo Legislativo:</span> <span class="font-bold">R$ 120,63/hab</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gestao" class="section-content">
+                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-navy uppercase">Dimensão Gestão</h2>
+                        <p class="text-sm text-gray-500">Nota da Dimensão: <span class="font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded">6,74</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="card p-6 lg:col-span-1 border-t-4 border-navy">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2">Radar de Governança</h4>
+                        <div class="h-56 w-full">
+                            <canvas id="gestaoRadarChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6 lg:col-span-1 bg-navy text-white relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 text-9xl text-blue-800 opacity-50"><i class="fa-solid fa-filter"></i></div>
+                        <h4 class="font-black text-gold text-sm mb-4 uppercase tracking-widest border-b border-blue-800 pb-2 relative z-10">Funil de Captação</h4>
+                        
+                        <div class="relative z-10 space-y-2 mt-4">
+                            <div class="bg-blue-900 rounded p-2 text-xs flex justify-between items-center border-l-4 border-blue-400">
+                                <span>1. Planejamento</span> <i class="fa-solid fa-check text-green-400"></i>
+                            </div>
+                            <div class="bg-blue-800 rounded p-2 text-xs flex justify-between items-center border-l-4 border-yellow-400 ml-2 w-[95%]">
+                                <span>2. Captação (Nota 25,77)</span> <i class="fa-solid fa-triangle-exclamation text-yellow-400"></i>
+                            </div>
+                            <div class="bg-blue-700 rounded p-2 text-xs flex justify-between items-center border-l-4 border-yellow-400 ml-4 w-[90%]">
+                                <span>3. Convênios MPEs (42,83)</span> <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                            <div class="bg-blue-600 rounded p-2 text-xs flex justify-between items-center border-l-4 border-gray-400 ml-6 w-[85%] text-gray-300">
+                                <span>4. Execução</span> <span>-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 lg:col-span-1 border-t-4 border-navy flex flex-col">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2">Painel CAUC / Transparência</h4>
+                        <div class="flex-grow flex flex-col justify-center space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 uppercase">Status CAUC</p>
+                                    <p class="text-[10px] text-gray-500">Nota: 0,83</p>
+                                </div>
+                                <div class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold flex items-center gap-2">
+                                    <span class="traffic-light tl-yellow"></span> Pendências
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 uppercase">Disp. Informação</p>
+                                    <p class="text-[10px] text-gray-500">Transparência</p>
+                                </div>
+                                <div class="text-lg font-black text-green-600">93,10%</div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 uppercase">Índice ATRICON</p>
+                                </div>
+                                <div class="text-lg font-black text-navy">3,57</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-5 border-l-8 border-gold bg-yellow-50">
+                    <p class="text-sm text-gray-700 font-medium"><i class="fa-solid fa-lightbulb text-gold mr-2 text-lg"></i> <strong>Insight:</strong> A maior oportunidade de evolução da dimensão Gestão está na <strong>ampliação da capacidade de captação de recursos</strong> (nota atual 25,77) e na regularização de pendências no CAUC.</p>
+                </div>
+            </section>
+
+            <section id="desempenho" class="section-content">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-black text-navy uppercase inline-block mr-4">Dimensão Desempenho</h2>
+                    <span class="font-bold text-white bg-green-600 px-3 py-1 rounded text-lg align-middle">Nota: 9,35</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Educação -->
+                    <div class="card p-6 border-l-4 border-blue-500">
+                        <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-graduation-cap text-blue-500 mr-2"></i> Educação</h4>
+                            <span class="text-sm font-bold text-green-600">Nota: 9,35</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">IDEB 5º</p>
+                                <p class="text-lg font-black text-navy">6,30</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">IDEB 9º</p>
+                                <p class="text-lg font-black text-navy">5,60</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Abandono</p>
+                                <p class="text-lg font-black text-green-500">0,20%</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 italic bg-blue-50 p-2 rounded border-l-2 border-blue-400">Educação é uma das maiores fortalezas do município.</p>
+                    </div>
+
+                    <!-- Saúde -->
+                    <div class="card p-6 border-l-4 border-green-500">
+                        <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-heart-pulse text-green-500 mr-2"></i> Saúde</h4>
+                            <span class="text-sm font-bold text-navy">Nota: 7,03</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">At. Básica</p>
+                                <p class="text-lg font-black text-navy">77,15%</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Vacinal</p>
+                                <p class="text-lg font-black text-navy">91,45%</p>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Mort. Inf.</p>
+                                <p class="text-lg font-black text-red-500">8,24</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 italic bg-green-50 p-2 rounded border-l-2 border-green-400">Atenção básica possui bom desempenho, mas a mortalidade infantil pode ser reduzida.</p>
+                    </div>
+
+                    <!-- Segurança & Vuln -->
+                    <div class="card p-6 border-l-4 border-yellow-500 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                                <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-shield-halved text-yellow-500 mr-2"></i> Segur. & Social</h4>
+                            </div>
+                            <div class="flex justify-around mb-4">
+                                <div class="text-center">
+                                    <p class="text-[10px] text-gray-500 uppercase font-bold">Segurança</p>
+                                    <p class="text-xl font-black text-navy">8,09</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] text-gray-500 uppercase font-bold">Vulnerabilidade</p>
+                                    <p class="text-xl font-black text-red-500">4,79</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-700 space-y-1 mb-4">
+                                <p>• Homicídios: 7,03 / Mortes Trânsito: 12</p>
+                                <p>• População Vulnerável: <strong>16,86%</strong></p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">Aprox. 1 em cada 6 moradores encontra-se em vulnerabilidade social.</p>
+                    </div>
+
+                    <!-- Saneamento -->
+                    <div class="card p-6 border-l-4 border-teal-500">
+                        <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-faucet-drip text-teal-500 mr-2"></i> Saneamento</h4>
+                            <span class="text-sm font-bold text-yellow-600">Nota: 6,02</span>
+                        </div>
+                        <div class="mb-4">
+                            <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                                <span>Tratamento de Esgoto</span>
+                                <span>100%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-teal-500 h-2.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-red-50 p-3 rounded border border-red-200 flex gap-3 items-start">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i>
+                            <div>
+                                <p class="text-xs font-bold text-red-700 uppercase">Alerta SNIS</p>
+                                <p class="text-[10px] text-red-600 leading-tight mt-1">A nota pode estar sendo artificialmente reduzida por ausência de informações ou dados desatualizados enviados ao Sistema Nacional.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="benchmarking" class="section-content">
+                <div class="mb-6 p-4 bg-navy text-white rounded-xl shadow-lg flex items-center border-l-8 border-blue-400">
+                    <div class="mr-4 text-3xl text-blue-400"><i class="fa-solid fa-code-compare"></i></div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-blue-200">Análise Comparativa</p>
+                        <p class="text-sm italic">Olímpia x Lençóis Paulista (Benchmark Grupo 6)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6 flex flex-col items-center">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full text-center">Comparativo de Dimensões</h4>
+                        <div class="h-64 w-full relative">
+                            <canvas id="benchmarkingRadar"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Tabela de Diferenciais</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-100 text-gray-600 uppercase text-[10px] font-bold">
+                                    <tr>
+                                        <th class="p-3 rounded-tl-lg">Indicador</th>
+                                        <th class="p-3 text-center border-b-2 border-navy">Olímpia</th>
+                                        <th class="p-3 text-center">Lençóis P.</th>
+                                        <th class="p-3 text-center rounded-tr-lg">Diferença</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-800 font-medium">
+                                    <tr class="border-b">
+                                        <td class="p-3 font-bold">Índice IGM Geral</td>
+                                        <td class="p-3 text-center font-bold text-navy">6,84</td>
+                                        <td class="p-3 text-center">7,99</td>
+                                        <td class="p-3 text-center text-red-500 font-bold">-1,15</td>
+                                    </tr>
+                                    <tr class="border-b bg-red-50">
+                                        <td class="p-3">Finanças</td>
+                                        <td class="p-3 text-center font-bold text-red-600">4,79</td>
+                                        <td class="p-3 text-center">7,63</td>
+                                        <td class="p-3 text-center text-red-500">-2,84</td>
+                                    </tr>
+                                    <tr class="border-b bg-yellow-50">
+                                        <td class="p-3">Gestão</td>
+                                        <td class="p-3 text-center font-bold text-yellow-600">6,74</td>
+                                        <td class="p-3 text-center">7,29</td>
+                                        <td class="p-3 text-center text-red-500">-0,55</td>
+                                    </tr>
+                                    <tr class="border-b bg-green-50">
+                                        <td class="p-3">Desempenho</td>
+                                        <td class="p-3 text-center font-bold text-green-600">9,35</td>
+                                        <td class="p-3 text-center">9,03</td>
+                                        <td class="p-3 text-center text-green-600 font-bold">+0,32</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 p-4 border-l-4 border-navy bg-gray-50 rounded">
+                            <p class="text-sm text-gray-700"><strong>Conclusão:</strong> Olímpia <strong>supera</strong> Lençóis Paulista na entrega de políticas públicas e serviços (Desempenho), porém apresenta defasagens substanciais em Finanças e leve desvantagem em Gestão.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="plano-acao" class="section-content">
+                <div class="card p-6 lg:p-8 bg-white border-none shadow-lg mb-8">
+                    <h4 class="text-xl font-black uppercase tracking-tight mb-6 text-navy border-b-2 border-gold pb-2 inline-block">Cronograma e Painel Executivo</h4>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-navy text-white uppercase text-[10px] tracking-widest">
+                                <tr>
+                                    <th class="p-4 rounded-tl-lg">Prioridade de Ação</th>
+                                    <th class="p-4">Dimensão / Área</th>
+                                    <th class="p-4">Prazo</th>
+                                    <th class="p-4 text-center rounded-tr-lg">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Regularizar base de dados SNIS</td>
+                                    <td class="p-4 text-xs">Desempenho (Saneamento)</td>
+                                    <td class="p-4 text-xs"><span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold">Curto Prazo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Aumento da Captação de Recursos</td>
+                                    <td class="p-4 text-xs">Gestão</td>
+                                    <td class="p-4 text-xs"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-bold">Médio Prazo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Revisar pendências CAUC</td>
+                                    <td class="p-4 text-xs">Gestão (Transparência/Fiscal)</td>
+                                    <td class="p-4 text-xs"><span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold">Curto Prazo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Planejamento Estratégico Invest.</td>
+                                    <td class="p-4 text-xs">Finanças</td>
+                                    <td class="p-4 text-xs"><span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold">Longo Prazo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Redução de Vulnerabilidade Social</td>
+                                    <td class="p-4 text-xs">Desempenho</td>
+                                    <td class="p-4 text-xs"><span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold">Longo Prazo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-bold text-navy">Monitoramento contínuo IGM</td>
+                                    <td class="p-4 text-xs">Todas</td>
+                                    <td class="p-4 text-xs"><span class="bg-gray-200 text-gray-800 px-2 py-1 rounded font-bold">Contínuo</span></td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-8 flex gap-6 border-t border-gray-200 pt-6">
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-600">
+                            <span class="traffic-light tl-red"></span> Ação Crítica/Pendente
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-600">
+                            <span class="traffic-light tl-yellow"></span> Em Andamento/Atenção
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-600">
+                            <span class="traffic-light tl-green"></span> Concluído/Regular
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // Store charts to destroy/recreate or update if needed
+        let charts = {};
+
+        // Navigation Management
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            element.classList.add('active');
+
+            document.querySelectorAll('.section-content').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+
+            const titles = {
+                'sala-situacao': 'Sala de Situação do Prefeito',
+                'visao-geral': 'Visão Geral do Município',
+                'financas': 'Gestão de Finanças',
+                'gestao': 'Governança e Gestão',
+                'desempenho': 'Desempenho e Serviços',
+                'benchmarking': 'Benchmarking Regional',
+                'plano-acao': 'Plano de Ação Estratégico'
+            };
+            document.getElementById('page-title').innerText = titles[sectionId];
+        }
+
+        // Global Chart Defaults
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+        Chart.defaults.color = '#475569';
+
+        // Simulator Logic
+        function updateSimulator(val) {
+            document.getElementById('sim-current').innerText = val + '%';
+            
+            // Dummy logic for simulation:
+            // Base note 6.84 is when invest = 3.98. 
+            // Max note 8.00 if invest approaches 40.
+            let baseNote = 6.84;
+            let projected = baseNote + ((val - 3.98) * (1.16 / 36.02)); // Linear scaling up to ~8.00
+            
+            let displayVal = projected.toFixed(2).replace('.', ',');
+            document.getElementById('sim-projected').innerText = displayVal;
+            
+            let diff = projected - baseNote;
+            let diffEl = document.getElementById('sim-diff');
+            if (diff > 0.01) {
+                diffEl.innerText = "+" + diff.toFixed(2).replace('.', ',') + " Pontos";
+                diffEl.classList.remove('hidden');
+            } else {
+                diffEl.classList.add('hidden');
+            }
+        }
+
+        // Init all charts
+        window.onload = function() {
+            initCharts();
+            
+            // Lógica do Menu Lateral Retrátil
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const sidebar = document.getElementById('sidebar');
+            
+            toggleBtn.addEventListener('click', () => {
+                if (window.innerWidth < 768) {
+                    // Mobile: Desliza o menu pra dentro da tela
+                    sidebar.classList.toggle('mobile-open');
+                } else {
+                    // Desktop: Colapsa o menu reduzindo a largura
+                    sidebar.classList.toggle('collapsed');
+                }
+                
+                // Redimensiona os gráficos com um pequeno atraso para se adaptar ao novo espaço
+                setTimeout(() => {
+                    Object.values(charts).forEach(chart => {
+                        if(chart && typeof chart.resize === 'function') {
+                            chart.resize();
+                        }
+                    });
+                }, 300);
+            });
+            
+            // Fecha o menu lateral no mobile ao clicar em algum link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.remove('mobile-open');
+                    }
+                });
+            });
+        }
+
+        function initCharts() {
+            // 1. Radar Geral (Sala de Situação)
+            const ctxRadarGeral = document.getElementById('geralRadarChart').getContext('2d');
+            charts.radarGeral = new Chart(ctxRadarGeral, {
+                type: 'radar',
+                data: {
+                    labels: ['Finanças', 'Gestão', 'Desempenho'],
+                    datasets: [{
+                        label: 'Olímpia 2026',
+                        data: [4.79, 6.74, 9.35],
+                        backgroundColor: 'rgba(0, 51, 102, 0.2)',
+                        borderColor: '#003366',
+                        pointBackgroundColor: '#ffb800',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#ffb800',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            suggestedMin: 0,
+                            suggestedMax: 10,
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 2. Gauge Chart (Visão Geral) - Simulated with Doughnut
+            const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+            charts.gauge = new Chart(ctxGauge, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Nota IGM', 'Restante'],
+                    datasets: [{
+                        data: [6.84, 3.16],
+                        backgroundColor: ['#003366', '#e2e8f0'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+
+            // 3. Bar Chart (Finanças)
+            const ctxFinancas = document.getElementById('financasBarChart').getContext('2d');
+            charts.financas = new Chart(ctxFinancas, {
+                type: 'bar',
+                data: {
+                    labels: ['Autonomia Fin.', 'Liquidez', 'Cap. Investimento', 'Previdência', 'Gasto Pessoal'],
+                    datasets: [{
+                        label: 'Desempenho',
+                        data: [59.19, 73.83, 3.98, 65.0, 39.54], // Normalized Previdência for display if needed, but keeping actual scale or relative
+                        backgroundColor: [
+                            '#3b82f6', // blue
+                            '#22c55e', // green
+                            '#ef4444', // red
+                            '#eab308', // yellow
+                            '#22c55e'  // green
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { max: 100, grid: { display: false } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 4. Radar Gestão
+            const ctxGestao = document.getElementById('gestaoRadarChart').getContext('2d');
+            charts.gestao = new Chart(ctxGestao, {
+                type: 'radar',
+                data: {
+                    labels: ['Planejamento', 'Transparência', 'RH', 'Captação', 'Compras', 'Fiscal'],
+                    datasets: [{
+                        label: 'Índice de Governança',
+                        data: [7, 9, 4, 2.5, 6, 8], // Dummy normalized data for visual representation of the concept
+                        backgroundColor: 'rgba(255, 184, 0, 0.2)',
+                        borderColor: '#ffb800',
+                        pointBackgroundColor: '#003366',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { suggestedMin: 0, suggestedMax: 10, ticks: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 5. Radar Benchmarking
+            const ctxBenchmark = document.getElementById('benchmarkingRadar').getContext('2d');
+            charts.benchmark = new Chart(ctxBenchmark, {
+                type: 'radar',
+                data: {
+                    labels: ['Geral', 'Finanças', 'Gestão', 'Desempenho'],
+                    datasets: [
+                        {
+                            label: 'Olímpia',
+                            data: [6.84, 4.79, 6.74, 9.35],
+                            backgroundColor: 'rgba(255, 184, 0, 0.4)',
+                            borderColor: '#ffb800',
+                            pointBackgroundColor: '#ffb800',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Lençóis Paulista',
+                            data: [7.99, 7.63, 7.29, 9.03],
+                            backgroundColor: 'rgba(0, 51, 102, 0.4)',
+                            borderColor: '#003366',
+                            borderDash: [5, 5],
+                            pointBackgroundColor: '#003366',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { suggestedMin: 0, suggestedMax: 10 } },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
