@@ -1,397 +1,844 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Integrado - Casa Civil</title>
-  
-  <!-- Favicon da Prefeitura -->
-  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/3/30/Bras%C3%A3o_de_Ol%C3%ADmpia%2C_SP.jpg" />
-
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            navy: '#003366',
-            gold: '#ffb800'
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Estilos base e Fontes -->
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-    body { 
-      background-color: #f8fafc;
-      color: #1e293b; 
-    }
-    
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fadeIn {
-      animation: fadeIn 0.5s ease-out forwards;
-    }
-    .animate-fadeInFast {
-      animation: fadeIn 0.3s ease-out forwards;
-    }
-  </style>
-
-  <!-- Bibliotecas Base: React, ReactDOM e Babel (para standalone) -->
-  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
-
-  <!-- CÓDIGO FONTE PRINCIPAL -->
-  <script type="text/babel">
-    // Sem 'imports'! Chamando diretamente das variáveis globais injetadas pelo CDN.
-    const { useState, useEffect } = React;
-
-    // Ícones In-line (Substitutos offline-safe para Lucide)
-    const LayoutDashboard = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>;
-    const AlertCircle = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
-    const RefreshCw = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>;
-    const BarChart3 = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 3v18h18"></path><rect x="7" y="13" width="4" height="4" rx="1"></rect><rect x="15" y="5" width="4" height="12" rx="1"></rect></svg>;
-    const ChevronLeft = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="15 18 9 12 15 6"></polyline></svg>;
-    const ArrowRight = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>;
-    const X = ({ size = 24, className = '', strokeWidth = 2 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-
-    function Toast({ message, onClose }) {
-      if (!message) return null;
-      return (
-        <div className="fixed bottom-6 right-6 bg-slate-900 border border-slate-700 shadow-2xl rounded-lg p-4 z-[60] flex items-start max-w-sm animate-fadeInFast">
-          <AlertCircle size={20} className="text-gold mr-3 mt-0.5 flex-shrink-0" />
-          <div className="text-white text-sm font-medium">{message}</div>
-          <button onClick={onClose} className="ml-4 text-slate-400 hover:text-white transition-colors cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-      );
-    }
-
-    function Header() {
-      return (
-        <header className="bg-navy border-b border-navy h-24 flex items-center justify-between px-4 sm:px-6 lg:px-10 z-30 flex-shrink-0 shadow-sm relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-gold to-white"></div>
-          
-          <div className="flex flex-col justify-center flex-1">
-            <h1 className="text-sm sm:text-lg md:text-xl font-black text-white tracking-tight leading-none mb-1 uppercase">
-              Painel Integrado
-            </h1>
-            <p className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-widest leading-none hidden sm:block">
-              Secretaria Municipal da Casa Civil
-            </p>
-            <p className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-widest leading-none sm:hidden">
-              Casa Civil
-            </p>
-          </div>
-
-          <div className="flex-shrink-0 flex items-center justify-center mx-2 sm:mx-4">
-            <div className="h-16 sm:h-20 bg-white rounded-lg shadow-sm border border-slate-100 px-3 py-1.5 flex items-center justify-center overflow-hidden">
-              <img src="https://e-licita.olimpia.sp.gov.br:8096/img/logo.png" alt="Brasão de Olímpia" className="h-full w-auto object-contain object-center" />
-            </div>
-          </div>
-
-          <div className="flex flex-1 justify-end">
-            <span className="bg-white/10 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border border-white/20 shadow-sm hidden sm:block">
-              Ano 2026
-            </span>
-          </div>
-        </header>
-      );
-    }
-
-    function CategoryCard({ category, onClick }) {
-      const IconComponent = category.icon || LayoutDashboard;
-      return (
-        <div 
-          onClick={onClick}
-          className="block bg-navy rounded-2xl shadow-md hover:shadow-2xl border border-navy hover:border-gold p-6 flex flex-col transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] relative overflow-hidden group h-48 cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 rounded-full opacity-0 blur-3xl transition-all duration-700 group-hover:opacity-30 group-hover:scale-150 bg-gold"></div>
-          <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-500 bg-transparent group-hover:bg-gold"></div>
-
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 group-hover:border-gold/50 transition-colors shadow-inner">
-              <IconComponent size={32} className="text-slate-300 group-hover:text-gold transition-colors" strokeWidth={1.5} />
-            </div>
-          </div>
-
-          <div className="mt-auto relative z-10 flex justify-between items-end">
-            <h3 className="text-xl md:text-2xl font-bold text-white leading-tight tracking-tight group-hover:text-gold transition-colors line-clamp-2 max-w-[70%]">
-              {category.label}
-            </h3>
-            <span className="transition-transform duration-300 text-gold flex items-center justify-center bg-white/10 p-2 rounded-full group-hover:bg-gold group-hover:text-navy">
-              <ArrowRight size={20} className="transition-transform" />
-            </span>
-          </div>
-        </div>
-      );
-    }
-
-    function DashboardCard({ dashboard, onNotification }) {
-      const isMaintenance = dashboard.status === "Em manutenção";
-      const hasNoLink = !dashboard.url || dashboard.url === "#";
-
-      const handleClick = (e) => {
-        if (isMaintenance) {
-          e.preventDefault();
-          onNotification("Este painel está em manutenção no momento.");
-        } else if (hasNoLink) {
-          e.preventDefault();
-          onNotification("Este painel ainda não possui um link associado na planilha.");
-        }
-      };
-
-      return (
-        <a 
-          href={isMaintenance || hasNoLink ? "#" : dashboard.url} 
-          target={isMaintenance || hasNoLink ? "_self" : "_blank"} 
-          rel="noopener noreferrer" 
-          onClick={handleClick}
-          className={`block bg-white rounded-2xl shadow-sm hover:shadow-xl border ${isMaintenance ? "border-orange-500/50" : "border-slate-200 hover:border-gold"} p-6 flex flex-col transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] relative overflow-hidden group h-48 cursor-pointer`}
-        >
-          <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-500 ${isMaintenance ? "bg-orange-500" : "bg-navy group-hover:bg-gold"}`}></div>
-
-          <div className="flex justify-between items-start mb-4 relative z-10 min-h-[28px] pl-2">
-            <div className="flex-grow">
-               <h3 className="text-lg font-bold text-navy leading-tight tracking-tight group-hover:text-gold transition-colors line-clamp-3">
-                 {dashboard.title}
-               </h3>
-            </div>
-            {isMaintenance && (
-              <span className="text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider bg-orange-100 text-orange-600 flex-shrink-0 ml-3 border border-orange-200">
-                Manutenção
-              </span>
-            )}
-          </div>
-
-          <div className="mt-auto relative z-10 flex justify-between items-end pl-2">
-            <div className="flex flex-wrap gap-2">
-              {dashboard.tags?.map((tag, idx) => (
-                <span key={idx} className="bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide uppercase">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <span className={`transition-colors duration-300 ml-4 flex-shrink-0 ${isMaintenance ? "text-slate-400" : "text-navy group-hover:text-gold"}`}>
-              <ArrowRight size={24} className={!isMaintenance ? "group-hover:translate-x-1 transition-transform" : ""} />
-            </span>
-          </div>
-        </a>
-      );
-    }
-
-    function App() {
-      const [categories, setCategories] = useState([]);
-      const [links, setLinks] = useState([]);
-      const [activeCategory, setActiveCategory] = useState(null);
-      const [isLoading, setIsLoading] = useState(true);
-      const [error, setError] = useState(null);
-      const [toastMsg, setToastMsg] = useState(null);
-
-      const showToast = (msg) => {
-        setToastMsg(msg);
-        setTimeout(() => setToastMsg(null), 4000);
-      };
-
-      useEffect(() => {
-        const fetchData = async () => {
-          setIsLoading(true);
-          setError(null);
-          try {
-            const API_URL = "https://script.google.com/macros/s/AKfycbx_k4XYcG6PdFEFlAv-F41SF1lX9iS77Vk3aMem0BSRN5CR0Gi9yweiuXL3GRu1vPSebA/exec";
-            const response = await fetch(API_URL);
-            
-            if (!response.ok) throw new Error("Erro ao conectar com a fonte de dados.");
-            
-            const rawData = await response.json();
-            const rows = rawData.data || rawData;
-
-            if (!Array.isArray(rows) || rows.length === 0) {
-               throw new Error("Planilha vazia ou formato não reconhecido.");
-            }
-
-            const newCategories = [];
-            const newLinks = [];
-
-            if (Array.isArray(rows[0])) {
-              const headers = rows[0];
-              
-              headers.forEach((headerStr, colIndex) => {
-                const header = String(headerStr).trim();
-                if (!header) return;
-                
-                const catId = header.toLowerCase().replace(/[^a-z0-9]/g, "-");
-                newCategories.push({ id: catId, label: header, icon: LayoutDashboard });
-
-                for (let i = 1; i < rows.length; i++) {
-                  const cellValue = rows[i][colIndex];
-                  if (cellValue && String(cellValue).trim() !== "") {
-                    const cellText = String(cellValue).trim();
-                    let url = "#";
-                    let title = cellText;
-                    
-                    const urlMatch = cellText.match(/(https?:\/\/[^\s]+)/);
-                    if (urlMatch) {
-                      url = urlMatch[1];
-                      title = cellText.replace(urlMatch[1], "").replace(/^[\n-]+|[\n-]+$/g, "").trim();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Estratégico IGM-CFA 2026 - Olímpia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#003366',
+                        gold: '#ffb800',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
                     }
-
-                    const isMaint = cellText.toLowerCase().includes("[manutenção]");
-                    if (isMaint) title = title.replace(/\[manutenção\]/i, "").trim();
-
-                    newLinks.push({
-                      id: `link-${colIndex}-${i}`,
-                      title: title || "Painel Sem Nome",
-                      category: catId,
-                      url: url,
-                      tags: [header],
-                      status: isMaint ? "Em manutenção" : "Ativo"
-                    });
-                  }
                 }
-              });
-            } else {
-              throw new Error("O formato dos dados requer um Array de Arrays.");
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body { background-color: #f1f5f9; color: #1e293b; }
+        
+        /* Modificações do Menu Lateral Retrátil */
+        .sidebar { background-color: #003366; transition: all 0.3s ease-in-out; overflow-x: hidden; white-space: nowrap; }
+        .sidebar.collapsed { width: 4.5rem; }
+        .sidebar.collapsed .nav-text, 
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .sidebar-footer { display: none; }
+        .sidebar.collapsed .logo-container { padding: 0.5rem; margin-bottom: 0; }
+        .sidebar.collapsed .logo-container img { width: 32px; height: 32px; object-fit: contain; }
+        .sidebar.collapsed .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar.collapsed .nav-link i { margin-right: 0; width: 100%; text-align: center; }
+        
+        /* Comportamento do menu no Mobile */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; z-index: 100; transform: translateX(-100%); width: 16rem !important; display: flex !important; left: 0; }
+            .sidebar.mobile-open { transform: translateX(0); }
+        }
+
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.15); border: 1px solid #e2e8f0; }
+        .nav-link { transition: all 0.2s; border-radius: 8px; }
+        .nav-link.active { background-color: #ffb800; color: #003366 !important; font-weight: 600; }
+        
+        .section-content { display: none; }
+        .section-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .traffic-light { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+        .tl-red { background-color: #ef4444; }
+        .tl-yellow { background-color: #eab308; }
+        .tl-green { background-color: #22c55e; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <aside id="sidebar" class="sidebar w-64 text-white flex-shrink-0 flex flex-col hidden md:flex h-screen sticky top-0">
+        <div class="p-6 text-center border-b border-blue-900 flex flex-col items-center">
+            <div class="bg-white p-2 rounded-lg mb-4 inline-block logo-container shadow-lg transition-all">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Bras%C3%A3o_de_Ol%C3%ADmpia%2C_SP.jpg" alt="Brasão de Olímpia" class="h-16 transition-all" onerror="this.src='https://placehold.co/100x100/ffffff/003366?text=Olimpia'">
+            </div>
+            <h2 class="sidebar-title text-[10px] font-bold tracking-widest uppercase text-blue-100 leading-tight px-2">Gestão Estratégica IGM-CFA 2026</h2>
+        </div>
+        
+        <nav class="flex-grow p-4 space-y-1">
+            <a href="#" onclick="showSection('painel-executivo', this)" class="nav-link active flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-chess-king w-6 text-center"></i>
+                <span class="nav-text text-sm">Painel Executivo</span>
+            </a>
+            <a href="#" onclick="showSection('financas', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-coins w-6 text-center"></i>
+                <span class="nav-text text-sm">Finanças</span>
+            </a>
+            <a href="#" onclick="showSection('gestao', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-sitemap w-6 text-center"></i>
+                <span class="nav-text text-sm">Gestão e Gov.</span>
+            </a>
+            <a href="#" onclick="showSection('desempenho', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-ranking-star w-6 text-center"></i>
+                <span class="nav-text text-sm">Desempenho</span>
+            </a>
+            <a href="#" onclick="showSection('benchmarking', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-scale-balanced w-6 text-center"></i>
+                <span class="nav-text text-sm">Benchmarking</span>
+            </a>
+            <a href="#" onclick="showSection('central-metas', this)" class="nav-link flex items-center space-x-3 p-3 text-blue-100 hover:bg-blue-800">
+                <i class="fa-solid fa-bullseye w-6 text-center"></i>
+                <span class="nav-text text-sm">Central de Metas</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer p-6 bg-blue-950 text-[10px] text-blue-300 mt-auto border-t border-blue-900 whitespace-normal">
+            <p class="font-bold mb-1 leading-tight">Setor de Monitoramento e Avaliação de Indicadores</p>
+            <p class="leading-tight">Divisão de Análise de Dados</p>
+            <p class="leading-tight">Prefeitura da Estância Turística de Olímpia</p>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col min-w-0">
+        <header class="bg-white border-b h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <button id="toggleSidebarBtn" class="text-navy hover:bg-gray-100 p-2 rounded-lg transition-colors"><i class="fa-solid fa-bars text-xl"></i></button>
+                <h1 id="page-title" class="text-lg md:text-xl font-bold text-navy uppercase tracking-tight">Painel Executivo</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="hidden sm:inline-block bg-blue-100 text-navy px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Base 2026</span>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-8 overflow-y-auto w-full mx-auto">
+
+            <section id="painel-executivo" class="section-content active">
+                <div class="mb-6 p-4 bg-navy text-white rounded-xl shadow-lg flex items-center border-l-8 border-gold">
+                    <div class="mr-4 text-3xl text-gold"><i class="fa-solid fa-chess-king"></i></div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-blue-200">Sala de Situação do Prefeito</p>
+                        <p class="text-sm italic font-light">Visão consolidada do município: Governança equilibrada com novos desafios estratégicos.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="card p-5 border-l-8 border-navy flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Nota Geral IGM</p>
+                        <h3 class="text-4xl font-black text-navy">6,84</h3>
+                        <p class="text-[10px] text-gray-500 mt-2 font-bold"><i class="fa-solid fa-chart-simple text-blue-500"></i> Equilíbrio Multidimensional</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-blue-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Ranking Grupo 6</p>
+                        <h3 class="text-4xl font-black text-blue-600">49º</h3>
+                        <p class="text-[10px] text-gray-500 mt-2 font-bold"><i class="fa-solid fa-trophy text-gold"></i> Posição Estadual</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-green-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Maturidade Institucional</p>
+                        <h3 class="text-2xl font-bold text-green-600 truncate mt-1">Estruturado</h3>
+                        <p class="text-[10px] text-green-700 mt-2 font-bold bg-green-50 px-2 py-1 rounded inline-block w-max">Faixa 6 a 8 pontos</p>
+                    </div>
+                    <div class="card p-5 border-l-8 border-yellow-500 flex flex-col justify-center">
+                        <p class="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1">Dimensões Base</p>
+                        <div class="mt-1 space-y-1">
+                            <p class="text-xs font-bold flex justify-between"><span>Desempenho:</span> <span class="text-navy">7,06</span></p>
+                            <p class="text-xs font-bold flex justify-between"><span>Gestão:</span> <span class="text-navy">6,74</span></p>
+                            <p class="text-xs font-bold flex justify-between"><span>Finanças:</span> <span class="text-navy">6,73</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Radar Chart -->
+                    <div class="card p-6 flex flex-col items-center">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Radar Estratégico Multidimensional</h4>
+                        <div class="h-72 w-full relative">
+                            <canvas id="radarExecutivo"></canvas>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-4 text-center italic">Radar equilibrado demonstra ausência de colapsos, mas indica necessidade de avanços uniformes.</p>
+                    </div>
+                    
+                    <!-- Priorities -->
+                    <div class="card p-6 bg-gray-50">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-red-500 pb-2 text-red-600">Painel de Prioridades Críticas</h4>
+                        <div class="space-y-3 max-h-80 overflow-y-auto pr-2">
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">1. Vulnerabilidade Social</p>
+                                    <p class="text-[10px] text-gray-500">16,86% da população afetada</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">2. Planejamento de Despesas</p>
+                                    <p class="text-[10px] text-gray-500">Risco Alto (5,20 vs Ref. 0,69)</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">3. Captação de Recursos</p>
+                                    <p class="text-[10px] text-gray-500">Nota baixa de eficiência (25,77)</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">4. Regularização CAUC</p>
+                                    <p class="text-[10px] text-gray-500">Pendências limitam convênios</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">5. Estrutura Administrativa</p>
+                                    <p class="text-[10px] text-gray-500">Excesso proporcional vs Referência</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">6. Mortalidade Infantil</p>
+                                    <p class="text-[10px] text-gray-500">Atenção ao indicador (8,24)</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-yellow-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">7. Segurança Viária</p>
+                                    <p class="text-[10px] text-gray-500">Mortes no trânsito acima do ideal</p>
+                                </div>
+                                <span class="traffic-light tl-yellow"></span>
+                            </div>
+                            <div class="bg-white p-3 border-l-4 border-red-500 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">8. Capacidade de Investimento</p>
+                                    <p class="text-[10px] text-gray-500">Apenas 3,98% da Receita Corrente</p>
+                                </div>
+                                <span class="traffic-light tl-red"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="financas" class="section-content">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-navy uppercase">Dimensão Finanças</h2>
+                        <div class="flex items-center gap-3 mt-1">
+                            <span class="font-bold text-green-700 bg-green-100 border border-green-300 px-3 py-1 rounded text-lg">Nota: 6,73</span>
+                            <span class="text-xs font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded uppercase tracking-widest"><span class="traffic-light tl-green w-2 h-2 mr-1"></span> Status Satisfatório</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                    <div class="card p-4 border-t-4 border-navy">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Autonomia Fin.</p>
+                        <p class="text-xl font-black text-navy mt-1">59,19%</p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-navy">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Liquidez</p>
+                        <p class="text-xl font-black text-navy mt-1">73,83%</p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-yellow-500">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Previdência</p>
+                        <p class="text-xl font-black text-navy mt-1">6,50 <span class="text-xs font-normal">/10</span></p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-red-500">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Gasto Pessoal</p>
+                        <p class="text-xl font-black text-red-600 mt-1">56,86%</p>
+                    </div>
+                    <div class="card p-4 border-t-4 border-red-500 bg-red-50">
+                        <p class="text-[10px] text-red-800 uppercase tracking-widest font-bold">Investimento</p>
+                        <p class="text-xl font-black text-red-600 mt-1">3,98%</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Distribuição e Comparativo</h4>
+                        <div class="h-64 w-full relative">
+                            <canvas id="barFinancas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-6">
+                        <div class="card p-6 border-l-8 border-navy flex flex-col justify-center flex-grow">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest mb-2"><i class="fa-solid fa-lightbulb text-gold mr-2"></i> Diagnóstico Fiscal</h4>
+                            <p class="text-sm text-gray-700 leading-relaxed font-medium bg-gray-50 p-4 rounded border border-gray-100">
+                                A situação financeira do município apresenta <strong>equilíbrio fiscal (Nota 6,73)</strong>, deixando de ser um gargalo crítico. Porém, a <strong>baixa capacidade de investimento (3,98%)</strong> aliada ao elevado comprometimento com <strong>despesas de pessoal (56,86%)</strong> reduzem drasticamente a margem estrutural para expansão de novas políticas públicas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gestao" class="section-content">
+                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-navy uppercase">Gestão e Governança</h2>
+                        <span class="font-bold text-yellow-700 bg-yellow-100 border border-yellow-300 px-3 py-1 rounded text-sm mt-2 inline-block">Nota da Dimensão: 6,74</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Planejamento -->
+                    <div class="card p-6 border-t-4 border-red-500 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-red-100 rounded-bl-full flex items-start justify-end p-3"><i class="fa-solid fa-triangle-exclamation text-red-500"></i></div>
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gray-100 pb-2">Planejamento de Despesas</h4>
+                        
+                        <div class="flex items-end gap-4 mb-4 mt-6">
+                            <div class="text-center w-1/2">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Referência Ideal</p>
+                                <p class="text-2xl font-black text-gray-400">0,69</p>
+                            </div>
+                            <div class="text-center w-1/2 border-l border-gray-200">
+                                <p class="text-[10px] text-red-600 uppercase font-bold">Realidade Olímpia</p>
+                                <p class="text-4xl font-black text-red-600">5,20</p>
+                            </div>
+                        </div>
+                        <div class="bg-red-50 p-3 rounded text-xs text-red-800 border border-red-100">
+                            <strong>Alerta de Risco Alto:</strong> O planejamento de despesas figura entre as principais fragilidades, impactando diretamente a eficiência da execução orçamentária e captação de recursos (Nota 25,77).
+                        </div>
+                    </div>
+
+                    <!-- Estrutura Adm -->
+                    <div class="card p-6 border-t-4 border-yellow-500">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gray-100 pb-2">Gap de Eficiência Administrativa</h4>
+                        <p class="text-[10px] text-gray-500 mb-2 uppercase text-center font-bold">Olímpia vs Referência de Mercado</p>
+                        <div class="h-48 w-full relative">
+                            <canvas id="barGestao"></canvas>
+                        </div>
+                        <p class="text-[10px] text-center text-gray-500 italic mt-2">A estrutura atual apresenta oportunidades claras de racionalização de processos.</p>
+                    </div>
+                </div>
+
+                <!-- Transparência -->
+                <div class="card p-6 border-l-8 border-navy">
+                    <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2">Transparência e Conformidade Institucional</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="col-span-1 md:col-span-2 flex flex-col justify-center space-y-4">
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded border border-gray-200">
+                                <div><p class="text-xs font-bold text-gray-800 uppercase">Disp. de Informações</p></div>
+                                <div class="text-lg font-black text-green-600">Boa Maturidade</div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded border border-gray-200">
+                                <div><p class="text-xs font-bold text-gray-800 uppercase">Índice ATRICON</p></div>
+                                <div class="text-lg font-black text-navy">0,83</div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-yellow-50 rounded border border-yellow-200">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800 uppercase">Status CAUC</p>
+                                    <p class="text-[10px] text-gray-600">Nota: 3,57</p>
+                                </div>
+                                <div class="px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full text-xs font-bold flex items-center gap-2">
+                                    <span class="traffic-light tl-yellow"></span> Pendências Identificadas
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-1 bg-blue-50 p-4 rounded border border-blue-100 flex flex-col justify-center text-sm text-gray-700">
+                            <p>O município apresenta boa maturidade em transparência ativa.</p>
+                            <p class="mt-2 text-red-600 font-bold">Porém, as irregularidades registradas no CAUC (3,57) representam um teto limitador severo para a celebração de novos convênios.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="desempenho" class="section-content">
+                <div class="mb-6 flex items-center gap-4">
+                    <h2 class="text-2xl font-black text-navy uppercase">Dimensão Desempenho</h2>
+                    <span class="font-bold text-yellow-800 bg-yellow-400 px-3 py-1 rounded text-lg align-middle shadow-sm">Nota: 7,06</span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest hidden md:inline-block border-l-2 border-gray-300 pl-4">Área com potencial de evolução</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Educação -->
+                    <div class="card p-6 border-l-4 border-blue-500 bg-gradient-to-br from-white to-blue-50">
+                        <div class="flex justify-between items-center border-b-2 border-blue-200 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-graduation-cap text-blue-600 mr-2"></i> Educação (Excelência)</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-center">
+                            <div class="bg-white p-3 rounded shadow-sm border border-gray-100">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">IDEB 5º Ano</p>
+                                <p class="text-2xl font-black text-navy">6,30</p>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow-sm border border-gray-100">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">IDEB 9º Ano</p>
+                                <p class="text-2xl font-black text-navy">5,60</p>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow-sm border border-gray-100">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Cob. Creches</p>
+                                <p class="text-xl font-black text-blue-600">64,79%</p>
+                            </div>
+                            <div class="bg-white p-3 rounded shadow-sm border border-gray-100">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Abandono</p>
+                                <p class="text-xl font-black text-green-500">0,20%</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-700 font-medium">A educação permanece como o <strong>principal destaque</strong> do município, apresentando indicadores consistentes com os padrões de excelência.</p>
+                    </div>
+
+                    <!-- Vulnerabilidade Social -->
+                    <div class="card p-6 border-l-4 border-red-500 flex flex-col">
+                        <div class="flex justify-between items-center border-b-2 border-red-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-users-slash text-red-500 mr-2"></i> Vulnerabilidade Social</h4>
+                        </div>
+                        <div class="flex-grow flex items-center justify-center gap-6">
+                            <div class="w-1/2 relative h-32">
+                                <canvas id="donutVulnerabilidade"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span class="text-2xl font-black text-red-600">16,8%</span>
+                                </div>
+                            </div>
+                            <div class="w-1/2 text-xs text-gray-700 space-y-2">
+                                <div class="p-2 bg-red-50 rounded border border-red-100">
+                                    <span class="font-bold text-red-800">Fator Limitador Crítico:</span> Representa atualmente um dos principais obstáculos para a elevação da nota global do município.
+                                </div>
+                                <div class="p-2 bg-gray-50 rounded">Aproximadamente 1 em cada 6 moradores encontra-se em vulnerabilidade.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Saúde -->
+                    <div class="card p-6 border-l-4 border-green-500">
+                        <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-heart-pulse text-green-500 mr-2"></i> Saúde</h4>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                                    <span>Atenção Básica (77,15)</span>
+                                    <span class="text-[10px] text-gray-400">Ref: 129</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                                    <span>Cobertura Vacinal (9.145)</span>
+                                    <span class="text-[10px] text-gray-400">Ref: 9.773</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-400 h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
+                                    <span>Mortalidade Infantil (8,24)</span>
+                                    <span class="text-[10px] text-gray-400">Ideal: < 6,36</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-red-400 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-gray-600 bg-gray-50 p-2 rounded mt-2">Resultados satisfatórios, porém ainda distantes dos referenciais de excelência IGM-CFA (foco preventivo).</p>
+                        </div>
+                    </div>
+
+                    <!-- Segurança -->
+                    <div class="card p-6 border-l-4 border-gray-600">
+                        <div class="flex justify-between items-center border-b-2 border-gray-100 pb-2 mb-4">
+                            <h4 class="font-black text-navy text-sm uppercase tracking-widest"><i class="fa-solid fa-shield-halved text-gray-600 mr-2"></i> Segurança Pública</h4>
+                        </div>
+                        <div class="flex justify-around items-center mb-4 h-24">
+                            <div class="text-center">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Homicídios</p>
+                                <p class="text-3xl font-black text-navy">7,03</p>
+                                <p class="text-[9px] text-gray-400 uppercase mt-1">Ref. Ideal: 3,07</p>
+                            </div>
+                            <div class="h-16 w-px bg-gray-200"></div>
+                            <div class="text-center">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Mortes Trânsito</p>
+                                <p class="text-3xl font-black text-orange-500">12</p>
+                                <p class="text-[9px] text-gray-400 uppercase mt-1">Ref. Ideal: 7</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 bg-gray-50 p-3 rounded">Indicadores sob controle comparados à média nacional, mas permanecem <strong>acima dos limites de excelência</strong> estipulados para a dimensão.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="benchmarking" class="section-content">
+                <div class="mb-6 p-4 bg-navy text-white rounded-xl shadow-lg flex items-center border-l-8 border-blue-400">
+                    <div class="mr-4 text-3xl text-blue-400"><i class="fa-solid fa-code-compare"></i></div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-blue-200">Análise Comparativa</p>
+                        <p class="text-sm italic">Olímpia x Lençóis Paulista (Benchmark Grupo 6)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6 flex flex-col items-center">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full text-center">Comparativo Radar</h4>
+                        <div class="h-64 w-full relative">
+                            <canvas id="benchmarkingRadar"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 flex flex-col">
+                        <h4 class="font-black text-navy text-sm mb-4 uppercase tracking-widest border-b-2 border-gold pb-2 w-full">Análise do Gap (Diferença)</h4>
+                        
+                        <div class="flex-grow flex flex-col justify-center space-y-4">
+                            <div class="flex items-center justify-between p-3 border-b">
+                                <span class="font-bold text-sm text-gray-700">Geral</span>
+                                <span class="font-black text-red-500">Olímpia 6,84 vs 7,99</span>
+                            </div>
+                            
+                            <!-- Waterfall Concept using bars -->
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span class="font-bold">Finanças</span><span class="text-red-500">-0,90 pts</span></div>
+                                <div class="w-full bg-gray-200 h-4 rounded overflow-hidden flex">
+                                    <div class="bg-gold h-full" style="width: 67.3%"></div>
+                                    <div class="bg-navy opacity-20 h-full" style="width: 9.0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span class="font-bold">Gestão</span><span class="text-red-500">-0,55 pts</span></div>
+                                <div class="w-full bg-gray-200 h-4 rounded overflow-hidden flex">
+                                    <div class="bg-gold h-full" style="width: 67.4%"></div>
+                                    <div class="bg-navy opacity-20 h-full" style="width: 5.5%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between text-xs mb-1"><span class="font-bold">Desempenho</span><span class="text-red-500">-1,97 pts</span></div>
+                                <div class="w-full bg-gray-200 h-4 rounded overflow-hidden flex">
+                                    <div class="bg-gold h-full" style="width: 70.6%"></div>
+                                    <div class="bg-navy opacity-20 h-full" style="width: 19.7%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-4 border-l-4 border-navy bg-gray-50 rounded text-sm text-gray-700">
+                            <strong>Conclusão:</strong> O município de referência apresenta desempenho superior em <strong>todas</strong> as dimensões avaliadas. O maior salto a ser dado por Olímpia encontra-se na dimensão Desempenho (foco social/saúde).
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="central-metas" class="section-content">
+                <div class="card p-6 lg:p-8 bg-white border-none shadow-lg mb-8 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 opacity-5 text-9xl text-navy"><i class="fa-solid fa-bullseye"></i></div>
+                    
+                    <h4 class="text-2xl font-black uppercase tracking-tight mb-2 text-navy border-b-2 border-gold pb-2 inline-block relative z-10">Central de Metas Estratégicas</h4>
+                    <p class="text-sm text-gray-500 mb-8 relative z-10">Monitoramento ativo das fragilidades e tradução em plano de ação transversal.</p>
+                    
+                    <div class="overflow-x-auto relative z-10">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-navy text-white uppercase text-[10px] tracking-widest">
+                                <tr>
+                                    <th class="p-4 rounded-tl-lg">Objetivo / Meta Integrada</th>
+                                    <th class="p-4">Dimensão Afetada</th>
+                                    <th class="p-4 text-center rounded-tr-lg">Status do Risco</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-users text-red-400"></i> Reduzir Vulnerabilidade Social</td>
+                                    <td class="p-4 text-xs bg-gray-50">Desempenho</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red shadow-sm shadow-red-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-file-invoice-dollar text-red-400"></i> Melhorar Planejamento de Despesas</td>
+                                    <td class="p-4 text-xs bg-gray-50">Gestão</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red shadow-sm shadow-red-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-hand-holding-dollar text-red-400"></i> Aumentar Captação de Recursos</td>
+                                    <td class="p-4 text-xs bg-gray-50">Gestão</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red shadow-sm shadow-red-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-chart-line text-red-400"></i> Ampliar Capacidade de Investimento</td>
+                                    <td class="p-4 text-xs bg-gray-50">Finanças</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-red shadow-sm shadow-red-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-file-signature text-yellow-500"></i> Reduzir Irregularidades CAUC</td>
+                                    <td class="p-4 text-xs bg-gray-50">Gestão (Transparência)</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow shadow-sm shadow-yellow-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-network-wired text-yellow-500"></i> Melhorar Eficiência Administrativa</td>
+                                    <td class="p-4 text-xs bg-gray-50">Gestão (RH)</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow shadow-sm shadow-yellow-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-baby text-yellow-500"></i> Reduzir Mortalidade Infantil</td>
+                                    <td class="p-4 text-xs bg-gray-50">Desempenho (Saúde)</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow shadow-sm shadow-yellow-500/50"></span></td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 font-bold text-navy flex items-center gap-3"><i class="fa-solid fa-car-burst text-yellow-500"></i> Melhorar Segurança Viária</td>
+                                    <td class="p-4 text-xs bg-gray-50">Desempenho (Segurança)</td>
+                                    <td class="p-4 text-center"><span class="traffic-light tl-yellow shadow-sm shadow-yellow-500/50"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-8 flex gap-6 border-t border-gray-200 pt-6">
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-600">
+                            <span class="traffic-light tl-red"></span> Prioridade Alta / Crítica
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-600">
+                            <span class="traffic-light tl-yellow"></span> Em Desenvolvimento / Atenção
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        let charts = {};
+
+        // Gestão de Navegação
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            document.querySelectorAll('.section-content').forEach(section => section.classList.remove('active'));
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) targetSection.classList.add('active');
+
+            const titles = {
+                'painel-executivo': 'Painel Executivo',
+                'financas': 'Gestão de Finanças',
+                'gestao': 'Gestão e Governança',
+                'desempenho': 'Desempenho Municipal',
+                'benchmarking': 'Benchmarking Regional',
+                'central-metas': 'Central de Metas'
+            };
+            const titleEl = document.getElementById('page-title');
+            if (titleEl && titles[sectionId]) {
+                titleEl.innerText = titles[sectionId];
+            }
+        }
+
+        // Init all charts
+        window.onload = function() {
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.font.family = "'Poppins', sans-serif";
+                Chart.defaults.color = '#475569';
             }
 
-            setCategories(newCategories);
-            setLinks(newLinks);
+            initCharts();
+            
+            // Lógica do Menu Lateral Retrátil
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const sidebar = document.getElementById('sidebar');
+            
+            if(toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        // Mobile: Desliza o menu pra dentro da tela
+                        sidebar.classList.toggle('mobile-open');
+                    } else {
+                        // Desktop: Colapsa o menu reduzindo a largura
+                        sidebar.classList.toggle('collapsed');
+                    }
+                    
+                    // Redimensiona os gráficos com um pequeno atraso para se adaptar ao novo espaço
+                    setTimeout(() => {
+                        Object.values(charts).forEach(chart => {
+                            if(chart && typeof chart.resize === 'function') {
+                                chart.resize();
+                            }
+                        });
+                    }, 300);
+                });
+            }
+            
+            // Fecha o menu lateral no mobile ao clicar em algum link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768 && sidebar) {
+                        sidebar.classList.remove('mobile-open');
+                    }
+                });
+            });
+        }
 
-          } catch (err) {
-            console.error("Fetch Error:", err);
-            setError(err.message || "Falha desconhecida ao processar os painéis.");
-          } finally {
-            setIsLoading(false);
-          }
-        };
+        function initCharts() {
+            if (typeof Chart === 'undefined') return;
 
-        fetchData();
-      }, []);
+            // 1. Radar Geral (Painel Executivo)
+            const ctxRadarGeral = document.getElementById('radarExecutivo');
+            if (ctxRadarGeral) {
+                charts.radarExecutivo = new Chart(ctxRadarGeral.getContext('2d'), {
+                    type: 'radar',
+                    data: {
+                        labels: ['Finanças', 'Gestão', 'Desempenho'],
+                        datasets: [{
+                            label: 'Olímpia 2026',
+                            data: [6.73, 6.74, 7.06],
+                            backgroundColor: 'rgba(0, 51, 102, 0.2)',
+                            borderColor: '#003366',
+                            pointBackgroundColor: '#ffb800',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#ffb800',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                ticks: { display: false }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
 
-      const filteredLinks = links.filter(l => l.category === activeCategory);
-      const activeCategoryObj = categories.find(c => c.id === activeCategory);
-      
-      const ActiveIcon = activeCategoryObj?.icon;
+            // 2. Bar Chart (Finanças)
+            const ctxFinancas = document.getElementById('barFinancas');
+            if (ctxFinancas) {
+                charts.barFinancas = new Chart(ctxFinancas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Autonomia Fin.', 'Liquidez', 'Previdência (x10)', 'Gasto Pessoal', 'Investimento'],
+                        datasets: [{
+                            label: 'Desempenho (%)',
+                            data: [59.19, 73.83, 65.0, 56.86, 3.98],
+                            backgroundColor: [
+                                '#003366', // navy
+                                '#003366', // navy
+                                '#eab308', // yellow
+                                '#ef4444', // red
+                                '#ef4444'  // red
+                            ],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { max: 100, grid: { borderDash: [2, 4], color: '#e2e8f0' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
 
-      return (
-        <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
-          <Header />
-          <main className="flex-grow p-6 md:p-10 w-full relative">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-10 pb-6 flex flex-col gap-4">
-                {activeCategory !== null && (
-                  <button 
-                    onClick={() => setActiveCategory(null)} 
-                    className="self-start flex items-center gap-2 text-slate-500 font-bold hover:text-navy transition-colors bg-white px-5 py-2.5 rounded-full border border-slate-200 shadow-sm hover:shadow-md group cursor-pointer"
-                  >
-                    <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                    Voltar para o Menu Principal
-                  </button>
-                )}
+            // 3. Bar Chart Comparativo (Gestão)
+            const ctxGestao = document.getElementById('barGestao');
+            if (ctxGestao) {
+                charts.barGestao = new Chart(ctxGestao.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Servidores', 'Comissionados'],
+                        datasets: [
+                            {
+                                label: 'Olímpia',
+                                data: [2.89, 4.74],
+                                backgroundColor: '#003366',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Referência',
+                                data: [1.82, 2.26],
+                                backgroundColor: '#94a3b8',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                        },
+                        scales: {
+                            x: { grid: { borderDash: [2, 4], color: '#e2e8f0' } },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
 
-                <h2 className="text-3xl md:text-4xl font-black text-navy uppercase tracking-tighter flex items-center gap-3">
-                  {activeCategory === null ? (
-                    <>
-                      <LayoutDashboard className="text-gold" size={36} strokeWidth={2.5} />
-                      Divisões
-                    </>
-                  ) : (
-                    <>
-                       {ActiveIcon ? <ActiveIcon className="text-gold" size={36} strokeWidth={2.5} /> : null}
-                       {activeCategoryObj?.label || "Painéis"}
-                    </>
-                  )}
-                </h2>
-                
-                <p className="text-slate-600 text-base font-medium leading-relaxed max-w-3xl">
-                  {activeCategory === null 
-                    ? "Selecione a área desejada abaixo para acessar os respectivos observatórios e relatórios gerenciais."
-                    : `Visualizando todos os indicadores da área selecionada. Clique em um painel para abri-lo.`
-                  }
-                </p>
-              </div>
+            // 4. Donut Vulnerabilidade Social
+            const ctxVulnerabilidade = document.getElementById('donutVulnerabilidade');
+            if (ctxVulnerabilidade) {
+                charts.vulnerabilidade = new Chart(ctxVulnerabilidade.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Vulnerável', 'Não Vulnerável'],
+                        datasets: [{
+                            data: [16.86, 83.14],
+                            backgroundColor: ['#ef4444', '#f1f5f9'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
 
-              {error && (
-                <div className="mb-8 bg-red-50 text-red-700 p-5 rounded-xl flex items-start border border-red-200 shadow-sm">
-                  <AlertCircle size={24} className="mr-4 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-lg mb-1">Erro de Sincronização</h4>
-                    <p className="text-sm">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              {isLoading ? (
-                <div className="flex flex-col justify-center items-center py-32 opacity-70">
-                  <RefreshCw className="animate-spin text-navy mb-4" size={48} strokeWidth={1.5} />
-                  <span className="text-navy font-bold text-lg">Carregando dados da nuvem...</span>
-                </div>
-              ) : (
-                <>
-                  {activeCategory === null ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-20 animate-fadeIn">
-                      {categories.map((cat) => (
-                        <CategoryCard key={cat.id} category={cat} onClick={() => setActiveCategory(cat.id)} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="animate-fadeIn">
-                      {filteredLinks.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-                          {filteredLinks.map((dashboard) => (
-                            <DashboardCard key={dashboard.id} dashboard={dashboard} onNotification={showToast} />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-16 text-center flex flex-col items-center mt-2">
-                          <BarChart3 size={64} className="text-slate-300 mb-6" strokeWidth={1} />
-                          <h3 className="text-2xl font-bold text-navy mb-3">Nenhum painel disponível</h3>
-                          <p className="text-slate-500 text-base max-w-md">Não há relatórios cadastrados para esta divisão no momento.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </main>
-
-          <footer className="bg-navy border-t border-navy py-4 px-6 flex items-center justify-center flex-shrink-0 relative z-30">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-gold to-white"></div>
-            <p className="text-[10px] sm:text-xs font-medium text-slate-300 text-center uppercase tracking-widest">
-              Secretaria Municipal da Casa Civil • Olímpia, SP
-            </p>
-          </footer>
-
-          <Toast message={toastMsg} onClose={() => setToastMsg(null)} />
-        </div>
-      );
-    }
-
-    // Inicialização direta acessando root pelo ReactDOM da CDN
-    const rootElement = document.getElementById("root");
-    const root = ReactDOM.createRoot(rootElement);
-    root.render(<App />);
-  </script>
+            // 5. Radar Benchmarking
+            const ctxBenchmark = document.getElementById('benchmarkingRadar');
+            if (ctxBenchmark) {
+                charts.benchmark = new Chart(ctxBenchmark.getContext('2d'), {
+                    type: 'radar',
+                    data: {
+                        labels: ['Geral', 'Finanças', 'Gestão', 'Desempenho'],
+                        datasets: [
+                            {
+                                label: 'Olímpia',
+                                data: [6.84, 4.79, 6.74, 9.35],
+                                backgroundColor: 'rgba(255, 184, 0, 0.4)',
+                                borderColor: '#ffb800',
+                                pointBackgroundColor: '#ffb800',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Lençóis Paulista',
+                                data: [7.99, 7.63, 7.29, 9.03],
+                                backgroundColor: 'rgba(0, 51, 102, 0.4)',
+                                borderColor: '#003366',
+                                borderDash: [5, 5],
+                                pointBackgroundColor: '#003366',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { r: { suggestedMin: 0, suggestedMax: 10 } },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { usePointStyle: true } }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
 </body>
 </html>
